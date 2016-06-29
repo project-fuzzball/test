@@ -1,4 +1,4 @@
-module Expect exposing (Expectation, pass, fail, getFailure, equal, notEqual, atMost, lessThan, greaterThan, atLeast, true, false, onFail, all)
+module Expect exposing (Expectation, pass, fail, getFailure, equal, notEqual, atMost, lessThan, greaterThan, atLeast, true, false, onFail)
 
 {-| Determining whether tests pass or fail.
 
@@ -15,7 +15,7 @@ module Expect exposing (Expectation, pass, fail, getFailure, equal, notEqual, at
 
 ## Basic Expectations
 
-@docs Expectation, equal, notEqual, all
+@docs Expectation, equal, notEqual
 
 ## Comparisons
 
@@ -304,7 +304,7 @@ pass =
 -}
 fail : String -> Expectation
 fail =
-    Test.Expectation.Fail
+    Test.Expectation.Fail ""
 
 
 {-| Return `Nothing` if the given [`Expectation`](#Expectation) is a [`pass`](#pass),
@@ -316,14 +316,14 @@ and `Just` the error message if it is a [`fail`](#fail).
     getFailure (Expect.pass)
     -- Nothing
 -}
-getFailure : Expectation -> Maybe String
+getFailure : Expectation -> Maybe { given : String, message : String }
 getFailure expectation =
     case expectation of
         Test.Expectation.Pass ->
             Nothing
 
-        Test.Expectation.Fail desc ->
-            Just desc
+        Test.Expectation.Fail given message ->
+            Just { given = given, message = message }
 
 
 {-| If the given expectation fails, replace its failure message with a custom one.
@@ -338,53 +338,8 @@ onFail str expectation =
         Test.Expectation.Pass ->
             expectation
 
-        Test.Expectation.Fail _ ->
-            fail str
-
-
-{-| Translate each element in a list into an [`Expectation`](#Expectation). If
-they all pass, return a pass. If any fail, return a fail whose message includes
-all the other failure messages.
-
-    [ 0, 1, 2, 3, 4, 5 ]
-        |> Expect.all (Expect.lessThan 3)
-
-    {-
-
-    3
-    ╷
-    │ Expect.lessThan
-    ╵
-    3
-
-    ════════════════
-
-    4
-    ╷
-    │ Expect.lessThan
-    ╵
-    3
-
-    ════════════════
-
-    5
-    ╷
-    │ Expect.lessThan
-    ╵
-    3
-
-    -}
--}
-all : (a -> Expectation) -> List a -> Expectation
-all getExpectation list =
-    case List.filterMap (getExpectation >> getFailure) list of
-        [] ->
-            pass
-
-        failures ->
-            failures
-                |> String.join "\n\n════════════════\n\n"
-                |> fail
+        Test.Expectation.Fail given _ ->
+            Test.Expectation.Fail given str
 
 
 reportFailure : String -> String -> String -> String
