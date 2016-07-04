@@ -1,6 +1,6 @@
 module Test.Test exposing (Test(..), fuzzTest)
 
-import Random.Pcg as Random exposing (Generator)
+import Random exposing (Generator)
 import Test.Expectation exposing (Expectation(..))
 import Dict exposing (Dict)
 import Shrink exposing (Shrinker)

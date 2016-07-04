@@ -13,10 +13,9 @@ module Test exposing (Test, FuzzOptions, describe, test, concat, fuzz, fuzz2, fu
 @docs fuzz, fuzz2, fuzz3, fuzz4, fuzz5, fuzzWith, FuzzOptions
 -}
 
-import Random.Pcg as Random
 import Test.Test
 import Expect exposing (Expectation)
-import Random.Pcg as Random exposing (Generator)
+import Random exposing (Generator)
 import Fuzz exposing (Fuzzer)
 
 

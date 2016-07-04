@@ -18,7 +18,7 @@ module Test.Runner exposing (Runnable, Runner(..), run, fromTest, formatLabels)
 import Test exposing (Test)
 import Test.Test
 import Expect exposing (Expectation)
-import Random.Pcg as Random
+import Random
 import String
 
 
@@ -78,10 +78,12 @@ distributeSeeds runs test ( startingSeed, runners ) =
     case test of
         Test.Test.Test run ->
             let
-                ( seed, nextSeed ) =
-                    Random.step Random.independentSeed startingSeed
+                ( anInt, nextSeed ) =
+                    Random.step (Random.int 0 0xFFFFFFFF) startingSeed
             in
-                ( nextSeed, runners ++ [ Runnable (Thunk (\() -> run seed runs)) ] )
+                ( nextSeed
+                , runners :: (Runnable (Thunk (\() -> run (Random.initialSeed anInt) runs)))
+                )
 
         Test.Test.Labeled label subTest ->
             let

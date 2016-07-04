@@ -24,9 +24,11 @@ Instead of using a tuple, consider using `fuzzN`.
 
 import Array exposing (Array)
 import Char
-import Util exposing (..)
 import Shrink exposing (Shrinker)
-import Random.Pcg as Random exposing (Generator)
+import Random exposing (Generator)
+import Random.Extra as Random
+import Random.String exposing (rangeLengthString)
+import Random.Array exposing (rangeLengthArray)
 
 
 {-| A Fuzzer is a
@@ -212,13 +214,12 @@ result : Fuzzer error -> Fuzzer value -> Fuzzer (Result error value)
 result errFuzz valFuzz =
     Fuzzer
         (Random.bool
-            `Random.andThen`
-                (\b ->
-                    if b then
-                        Random.map Err errFuzz.generator
-                    else
-                        Random.map Ok valFuzz.generator
-                )
+            `Random.andThen` (\b ->
+                                if b then
+                                    Random.map Err errFuzz.generator
+                                else
+                                    Random.map Ok valFuzz.generator
+                             )
         )
         (Shrink.result errFuzz.shrinker valFuzz.shrinker)
 
@@ -232,9 +233,9 @@ list fuzz =
         (Random.frequency
             [ ( 1, Random.constant [] )
             , ( 1, Random.map (\x -> [ x ]) fuzz.generator )
-            , ( 3, rangeLengthList 2 10 fuzz.generator )
-            , ( 2, rangeLengthList 10 100 fuzz.generator )
-            , ( 0.5, rangeLengthList 100 400 fuzz.generator )
+            , ( 3, Random.rangeLengthList 2 10 fuzz.generator )
+            , ( 2, Random.rangeLengthList 10 100 fuzz.generator )
+            , ( 0.5, Random.rangeLengthList 100 400 fuzz.generator )
             ]
         )
         (Shrink.list fuzz.shrinker)
