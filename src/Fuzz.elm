@@ -1,4 +1,30 @@
-module Fuzz exposing (Fuzzer, custom, unit, bool, order, array, char, float, floatRange, int, tuple, tuple3, tuple4, tuple5, result, string, percentage, map, maybe, intRange, list, frequency, frequencyOrCrash)
+module Fuzz
+    exposing
+        ( Fuzzer
+        , custom
+        , unit
+        , bool
+        , order
+        , array
+        , char
+        , float
+        , floatRange
+        , int
+        , tuple
+        , tuple3
+        , tuple4
+        , tuple5
+        , result
+        , string
+        , percentage
+        , map
+        , andThen
+        , maybe
+        , intRange
+        , list
+        , frequency
+        , frequencyOrCrash
+        )
 
 {-| This is a library of `Fuzzer`s you can use to supply values to your fuzz tests.
 You can typically pick out which ones you need according to their types.
@@ -11,7 +37,7 @@ filtered and mapped over.
 @docs bool, int, intRange, float, floatRange, percentage, string, maybe, result, list, array
 
 ## Working with Fuzzers
-@docs Fuzzer, map, frequency, frequencyOrCrash
+@docs Fuzzer, map, andThen, frequency, frequencyOrCrash
 
 ## Tuple Fuzzers
 Instead of using a tuple, consider using `fuzzN`.
@@ -25,9 +51,9 @@ Instead of using a tuple, consider using `fuzzN`.
 import Array exposing (Array)
 import Char
 import Util exposing (..)
-import Lazy.List
+import Lazy.List exposing (LazyList)
 import Shrink exposing (Shrinker)
-import RoseTree
+import RoseTree exposing (RoseTree(..))
 import Random exposing (Generator)
 import Random.Extra as Random
 import Random.Array
@@ -91,7 +117,7 @@ custom generator shrinker =
     -- TODO I'd like to rename this fuzzer -Max
     let
         shrinkTree a =
-            RoseTree.Rose a (Lazy.List.map shrinkTree (shrinker a))
+            Rose a (Lazy.List.map shrinkTree (shrinker a))
     in
         Internal.Fuzzer (Random.map shrinkTree generator)
 
@@ -332,6 +358,60 @@ tuple5 ( Internal.Fuzzer genA, Internal.Fuzzer genB, Internal.Fuzzer genC, Inter
 map : (a -> b) -> Fuzzer a -> Fuzzer b
 map f (Internal.Fuzzer genTree) =
     Internal.Fuzzer (Random.map (RoseTree.map f) genTree)
+
+
+{-| Create a fuzzer based on the result of another fuzzer.
+-}
+andThen : (a -> Fuzzer b) -> Fuzzer a -> Fuzzer b
+andThen f (Internal.Fuzzer genTree) =
+    Internal.Fuzzer
+        (Random.andThen
+            genTree
+            (\(Rose root branches) ->
+                let
+                    unpack : Fuzzer x -> Generator (RoseTree x)
+                    unpack (Internal.Fuzzer genTree) =
+                        genTree
+
+                    -- genOtherChildren : Generator (LazyList (RoseTree b))
+                    genOtherChildren =
+                        branches
+                            |> Lazy.List.map (\rt -> RoseTree.map (f >> unpack) rt |> unwindRoseTree)
+                            |> unwindLazyList
+                            |> Random.map (Lazy.List.map RoseTree.flatten)
+                in
+                    Random.map2
+                        (\(Rose trueRoot root'sChildren) otherChildren ->
+                            Rose trueRoot (Lazy.List.append root'sChildren otherChildren)
+                        )
+                        (unpack (f root))
+                        genOtherChildren
+            )
+        )
+
+
+unwindRoseTree : RoseTree (Generator a) -> Generator (RoseTree a)
+unwindRoseTree (Rose genRoot lazyListOfRoseTreesOfGenerators) =
+    case Lazy.List.headAndTail lazyListOfRoseTreesOfGenerators of
+        Nothing ->
+            Random.map RoseTree.singleton genRoot
+
+        Just ( Rose gen children, moreList ) ->
+            Random.map4 (\a b c d -> Rose a (Lazy.List.cons (Rose b c) d))
+                genRoot
+                gen
+                (Lazy.List.map unwindRoseTree children |> unwindLazyList)
+                (Lazy.List.map unwindRoseTree moreList |> unwindLazyList)
+
+
+unwindLazyList : LazyList (Generator a) -> Generator (LazyList a)
+unwindLazyList lazyListOfGenerators =
+    case Lazy.List.headAndTail lazyListOfGenerators of
+        Nothing ->
+            Random.constant Lazy.List.empty
+
+        Just ( head, tail ) ->
+            Random.map2 (Lazy.List.cons) head (unwindLazyList tail)
 
 
 
