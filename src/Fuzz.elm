@@ -18,6 +18,7 @@ module Fuzz
         , string
         , percentage
         , map
+        , map2
         , andThen
         , maybe
         , intRange
@@ -37,7 +38,7 @@ filtered and mapped over.
 @docs bool, int, intRange, float, floatRange, percentage, string, maybe, result, list, array
 
 ## Working with Fuzzers
-@docs Fuzzer, map, andThen, frequency, frequencyOrCrash
+@docs Fuzzer, map, map2, andThen, frequency, frequencyOrCrash
 
 ## Tuple Fuzzers
 Instead of using a tuple, consider using `fuzzN`.
@@ -358,6 +359,20 @@ tuple5 ( Internal.Fuzzer genA, Internal.Fuzzer genB, Internal.Fuzzer genC, Inter
 map : (a -> b) -> Fuzzer a -> Fuzzer b
 map f (Internal.Fuzzer genTree) =
     Internal.Fuzzer (Random.map (RoseTree.map f) genTree)
+
+
+{-| Map over two fuzzers.
+-}
+map2 : (a -> b -> c) -> Fuzzer a -> Fuzzer b -> Fuzzer c
+map2 f (Internal.Fuzzer genTreeA) (Internal.Fuzzer genTreeB) =
+    Internal.Fuzzer
+        (Random.map2
+            (\(Rose a moreAs) (Rose b moreBs) ->
+                Rose (f a b) <| Lazy.List.map2 (RoseTree.map2 f) moreAs moreBs
+            )
+            genTreeA
+            genTreeB
+        )
 
 
 {-| Create a fuzzer based on the result of another fuzzer.
