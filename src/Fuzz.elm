@@ -2,6 +2,7 @@ module Fuzz
     exposing
         ( Fuzzer
         , custom
+        , constant
         , unit
         , bool
         , order
@@ -38,7 +39,7 @@ filtered and mapped over.
 @docs bool, int, intRange, float, floatRange, percentage, string, maybe, result, list, array
 
 ## Working with Fuzzers
-@docs Fuzzer, map, map2, andThen, frequency, frequencyOrCrash
+@docs Fuzzer, constant, map, map2, andThen, frequency, frequencyOrCrash
 
 ## Tuple Fuzzers
 Instead of using a tuple, consider using `fuzzN`.
@@ -352,6 +353,13 @@ tuple4 ( Internal.Fuzzer genA, Internal.Fuzzer genB, Internal.Fuzzer genC, Inter
 tuple5 : ( Fuzzer a, Fuzzer b, Fuzzer c, Fuzzer d, Fuzzer e ) -> Fuzzer ( a, b, c, d, e )
 tuple5 ( Internal.Fuzzer genA, Internal.Fuzzer genB, Internal.Fuzzer genC, Internal.Fuzzer genD, Internal.Fuzzer genE ) =
     Internal.Fuzzer (Random.map5 (RoseTree.map5 (,,,,)) genA genB genC genD genE)
+
+
+{-| TODO docme
+-}
+constant : a -> Fuzzer a
+constant x =
+    Internal.Fuzzer (Random.constant (RoseTree.singleton x))
 
 
 {-| Map a function over a fuzzer. This applies to both the generated and the shruken values.

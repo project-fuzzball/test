@@ -16,6 +16,7 @@ import Html.App
 import Html
 import String
 import Char
+import Bitwise
 
 
 main : Program Never
@@ -25,7 +26,25 @@ main =
         , update = \_ _ -> ()
         , view = \() -> Html.text "Check the console for useful output!"
         }
-        |> Test.Runner.Log.run (Test.concat [ testOxfordify, testWithoutNums ])
+        |> Test.Runner.Log.run attests
+
+
+attests =
+    describe "andThenTests"
+        [ fuzz (intRange 0 32) "int lower bound" <| \x -> Expect.atLeast 0 x
+        , fuzz (intRange 0 32) "int upper bound" <| \x -> Expect.atMost 32 x
+        , fuzzWith { runs = 1 }
+            (intRange 0 32
+                |> andThen
+                    (\b ->
+                        map2 (,) (constant b) (intRange 0 (2 ^ b))
+                    )
+            )
+            "bits of representation"
+            (\( b, x ) ->
+                Bitwise.shiftRightLogical x b |> Expect.equal 0
+            )
+        ]
 
 
 {-| stubbed function under test
