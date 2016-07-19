@@ -25,7 +25,7 @@ main =
         , update = \_ _ -> ()
         , view = \() -> Html.text "Check the console for useful output!"
         }
-        |> Test.Runner.Log.run (Test.batch [ testOxfordify, testWithoutNums ])
+        |> Test.Runner.Log.run (Test.concat [ testOxfordify, testWithoutNums ])
 
 
 {-| stubbed function under test
