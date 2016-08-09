@@ -1,21 +1,16 @@
 {
-    "version": "6.0.0",
-    "summary": "Unit testing support with Console/Html/String outputs.",
+    "version": "7.0.0",
+    "summary": "DEPRECATED - This has been replaced by elm-community/elm-test",
     "repository": "https://github.com/project-fuzzball/test.git",
     "license": "BSD-3-Clause",
     "source-directories": [
         "src"
     ],
     "exposed-modules": [
-        "Test",
-        "Test.Runner",
-        "Expect",
-        "Fuzz"
+        "Deprecated"
     ],
     "dependencies": {
-        "elm-community/shrink": "1.1.0 <= v < 2.0.0",
-        "elm-lang/core": "4.0.0 <= v < 5.0.0",
-        "mgold/elm-random-pcg": "3.0.0 <= v < 4.0.0"
+        "elm-lang/core": "4.0.0 <= v < 5.0.0"
     },
     "elm-version": "0.17.0 <= v < 0.18.0"
 }
